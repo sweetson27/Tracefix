@@ -1,0 +1,8 @@
+{
+  "name": "tracefix",
+  "version": "1.0.0",
+  "description": "Paste an error, get an explanation and ranked fixes.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.0" }
+}

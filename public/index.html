@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TraceFix — paste an error, get answers</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;background:#111;color:#eee}
+  textarea{width:100%;height:180px;background:#1c1c1c;color:#eee;border:1px solid #444;border-radius:8px;padding:.8rem;font-family:monospace}
+  button{margin-top:.6rem;padding:.6rem 1.4rem;border:0;border-radius:8px;background:#4f8cff;color:#fff;font-size:1rem;cursor:pointer}
+  #result{margin-top:1rem;background:#1c1c1c;border-radius:8px;padding:1rem;display:none}
+  .err{color:#ff6b6b}.tag{font-size:.75rem;color:#888}
+  li{margin:.4rem 0}
+</style>
+</head>
+<body>
+<h1>TraceFix</h1>
+<p>Paste a stack trace or error message. Get what broke, why, and what to do first.</p>
+<textarea id="input" placeholder="e.g. TypeError: Cannot read properties of undefined (reading 'name')&#10;    at getUser (app.js:42:19)"></textarea>
+<br><button id="go">Explain this error</button>
+<div id="result"></div>
+<script>
+const btn = document.getElementById("go"), out = document.getElementById("result");
+btn.onclick = async () => {
+  const text = document.getElementById("input").value;
+  out.style.display = "block";
+  out.innerHTML = "<p>Thinking…</p>";
+  try {
+    const r = await fetch("/api/analyse", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+    const d = await r.json();
+    if (!r.ok) { out.innerHTML = `<p class="err">${d.error}</p>`; return; }
+    const fixes = (d.fixes || []).map(f => `<li>${f}</li>`).join("");
+    out.innerHTML =
+      `<p class="tag">mode: ${d.mode}${d.degraded ? " (LLM unavailable — fell back to heuristics)" : ""}</p>
+       <p><b>What happened:</b> ${d.explanation || "—"}</p>
+       <p><b>Likely cause:</b> ${d.cause || "—"}</p>
+       <p><b>Do this, in order:</b></p><ol>${fixes}</ol>`;
+  } catch { out.innerHTML = `<p class="err">Could not reach the server.</p>`; }
+};
+</script>
+</body>
+</html>
